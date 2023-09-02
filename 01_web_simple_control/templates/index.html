@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>小米微电机Cybergear</title>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.3/socket.io.js"></script>
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet">
+    <link href='https://fonts.googleapis.com/css?family=Lato' rel='stylesheet' type='text/css'>
+    <style>
+        button, .btn {
+            /* flexbox */
+            display: flex;
+            
+            align-items: center;
+            flex-direction: column;
+            justify-content: center;
+            
+            /* this can be anything */
+            height: 100px;
+            width: 100px;
+            
+            > .fa {
+              font-size: 1.5rem;
+            }
+          }
+          
+          /* pen styles */
+          .container {
+            display: flex;
+            display: -webkit-flex;
+            align-items: center;
+            -webkit-align-items: center;
+            justify-content: center;
+            -webkit-justify-content: center;
+            height: 100vh;
+          }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button class="secondary" onclick="send('backward')">
+          <i class="fa fa-rotate-left"></i>
+        </button>
+        <button class="alert" onclick="send('stop')">
+          <i class="fa fa-stop"></i>
+        </button>
+        <button class="secondary" onclick="send('forward')">
+          <i class="fa fa-rotate-right"></i>
+        </button>
+      </div>
+    <div class="container text-center" style="margin-top: 20vh;">
+        <button class="btn btn-1 btn-sep icon-info" onclick="send('forward')">正转</button>
+        <button class="btn btn-2 btn-sep icon-cart" onclick="send('backward')">反转</button>
+        <button class="btn btn-3 btn-sep icon-heart" onclick="send('stop')">停止</button></div>
+    <script type="text/javascript">
+        var socket = io.connect('http://' + document.domain + ':' + location.port);
+
+        function send(direction) {
+            socket.emit(direction);
+        }
+    </script>
+</body>
+</html>

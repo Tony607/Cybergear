@@ -1,0 +1,40 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Jupyter Notebook
+.ipynb_checkpoints
+.jupyter
+
+# PyCharm, IntelliJ IDEA, VSCode
+.idea/
+.vscode/
+
+# Data files, databases
+*.sqlite
+
+# Logs
+*.log
+
+# Environment variables
+.env
+
+# Virtual environments
+venv/
+.virtualenv/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Compiled files
+*.o
+*.so
+*.dll
