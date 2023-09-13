@@ -1,7 +1,7 @@
-# ESP32 Micropython CAN总线控制小米微电机Cybergear
+# [如何用ESP32和MicroPython玩转小米微电机](https://www.bilibili.com/video/BV1J34y1K7kP/)
 
 ## 烧写支持ESP32 CAN 功能的 micropython 固件
-固件文件在：`./micropython_firmware`
+固件文件在：        `./micropython_firmware`
 
 ESP32 USB线连电脑，命令行执行固件烧写指令（**注意修改COM口号**为对应ESP32的串口号）：
 ```shell
