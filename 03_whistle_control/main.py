@@ -6,6 +6,17 @@ from datetime import datetime
 from scipy.signal import find_peaks_cwt
 from pcan_cybergear import CANMotorController
 import can
+import logging
+from datetime import datetime, timedelta
+
+# Initialize logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+# Initialize the last whistle timestamp
+last_whistle_time = datetime.now()
+
+# Time to wait after last whistle to disable motor (in seconds)
+SILENT_THRESHOLD = timedelta(seconds=0.5)
 
 bus = can.interface.Bus(bustype="pcan", channel="PCAN_USBBUS1", bitrate=1000000)
 motor = CANMotorController(bus, motor_id=127, main_can_id=254)
@@ -21,7 +32,7 @@ p = pyaudio.PyAudio()
 
 # Set up stream parameters
 RATE = 8000  # samples per second
-CHUNK = 1024  # number of samples per chunk
+CHUNK = 512  # number of samples per chunk
 
 # Open audio stream
 stream = p.open(format=pyaudio.paInt16, channels=1, rate=RATE, input=True, frames_per_buffer=CHUNK)
@@ -46,7 +57,7 @@ def save_to_csv(data, frequencies):
         for freq, mag in zip(frequencies, data):
             writer.writerow([freq, mag])
             
-    print(f"Data saved to {filename}")
+    logging.info(f"Data saved to {filename}")
 
 # Function to handle key events
 def on_key(event):
@@ -54,10 +65,10 @@ def on_key(event):
         save_to_csv(abs_fourier, frequencies)
     elif event.key == 'escape':  # 'esc' key
         motor.disable()
-        print("Motor disabled.")
+        logging.info("Motor disabled.")
     elif event.key == 'enter':  # 'enter' key
         motor.enable()
-        print("Motor enabled.")
+        logging.info("Motor enabled.")
 
 # Connect the event to the function
 fig.canvas.mpl_connect('key_press_event', on_key)
@@ -100,25 +111,30 @@ try:
     while True:
         # Check if Matplotlib window is closed
         if not plt.fignum_exists(fig.number):
-            print("Matplotlib window closed.")
+            logging.info("Matplotlib window closed.")
             break
-        
+        # Check if enough time has passed since the last whistle to disable the motor
+        if datetime.now() - last_whistle_time > SILENT_THRESHOLD:
+            motor.write_single_param("spd_ref", value=0)
+            
         audio_data = np.frombuffer(stream.read(CHUNK), dtype=np.int16)
         whistle_freq = detect_whistle(audio_data)
         
         if whistle_freq is not None:
-            print(f"Whistle detected at frequency: {whistle_freq} Hz")
+            # Update the last whistle timestamp
+            last_whistle_time = datetime.now()
+            logging.info(f"Whistle frequency: {whistle_freq} Hz")
             # Map whistle frequency to motor speed and update
             motor_speed = map_whistle_to_speed(whistle_freq)
             motor.write_single_param("spd_ref", value=motor_speed)
-            print(f"Motor speed set to {motor_speed} rad/s")
+            logging.info(f"Motor speed set to {motor_speed:.2f} rad/s")
         else:
-            print("No whistle detected.")
+            logging.debug("No whistle detected.")
 except KeyboardInterrupt:
-    print("Interrupted by user.")
+    logging.info("Interrupted by user.")
 finally:
     motor.disable()
-    print("Motor disabled.")
+    logging.info("Motor disabled.")
     stream.stop_stream()
     stream.close()
     p.terminate()
