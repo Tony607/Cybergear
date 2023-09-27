@@ -4,10 +4,20 @@ import matplotlib.pyplot as plt
 import csv
 from datetime import datetime
 from scipy.signal import find_peaks_cwt
-from pcan_cybergear import CANMotorController
+
 import can
 import logging
 from datetime import datetime, timedelta
+
+import os
+import sys
+# 获取当前脚本的绝对路径
+current_path = os.path.abspath(__file__)
+# 获取脚本所在的目录
+current_dir = os.path.dirname(current_path)
+# 添加需要的路径
+sys.path.append(os.path.join(current_dir, "..", "cybergear"))
+from pcan_cybergear import CANMotorController
 
 # Initialize logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
