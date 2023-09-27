@@ -231,7 +231,7 @@ class CANMotorController:
         index = param_info["index"]
         format = param_info["format"]
 
-        self._write_single_param(index=index, value=value, format=format)
+        return self._write_single_param(index=index, value=value, format=format)
 
     def set_0_pos(self):
         self.clear_can_rx()  # 清空CAN接收缓存，避免读到老数据
