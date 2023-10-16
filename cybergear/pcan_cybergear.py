@@ -66,13 +66,13 @@ class CANMotorController:
         SINGLE_PARAM_READ = 17
         SINGLE_PARAM_WRITE = 18
         FAULT_FEEDBACK = 21
+    
     # 控制模式
-
     class RunModes(enum.Enum):
-        CONTROL_MODE = 0
-        POSITION_MODE = 1
-        SPEED_MODE = 2
-        CURRENT_MODE = 3
+        CONTROL_MODE = 0 # 运控模式
+        POSITION_MODE = 1 # 位置模式
+        SPEED_MODE = 2 # 速度模式
+        CURRENT_MODE = 3 # 电流模式
 
     def _float_to_uint(self, x, x_min, x_max, bits):
         """
@@ -491,7 +491,7 @@ class CANMotorController:
 
     def set_motor_position_control(self, limit_spd, loc_ref):
         """
-        设置电机的位置控制参数。
+        位置模式下设置电机的位置控制参数。
 
         参数:
         limit_spd: 电机的最大速度。
@@ -509,7 +509,7 @@ class CANMotorController:
         self, torque, target_angle, target_velocity, Kp, Kd
     ):
         """
-        发送运控模式电机控制指令。
+        运控模式下发送电机控制指令。
 
         参数:
         torque: 扭矩。
