@@ -35,6 +35,14 @@ class CANMotorController:
     TWO_BYTES_BITS = 16
 
     def __init__(self, bus, motor_id=127, main_can_id=254):
+        """
+        初始化CAN电机控制器。
+
+        参数:
+        bus: CAN总线对象。
+        motor_id: 电机的CAN ID。
+        main_can_id: 主CAN ID。
+        """
         self.bus = bus
         self.MOTOR_ID = motor_id
         self.MAIN_CAN_ID = main_can_id
@@ -67,21 +75,57 @@ class CANMotorController:
         CURRENT_MODE = 3
 
     def _float_to_uint(self, x, x_min, x_max, bits):
+        """
+        将浮点数转换为无符号整数。
+
+        参数:
+        x: 输入的浮点数。
+        x_min: 可接受的最小浮点数。
+        x_max: 可接受的最大浮点数。
+        bits: 输出无符号整数的位数。
+
+        返回:
+        转换后的无符号整数。
+        """
         span = x_max - x_min
         offset = x_min
         x = max(min(x, x_max), x_min)  # Clamp x to the range [x_min, x_max]
         return int(((x - offset) * ((1 << bits) - 1)) / span)
 
     def _uint_to_float(self, x, x_min, x_max, bits):
+        """
+        将无符号整数转换为浮点数。
+
+        参数:
+        x: 输入的无符号整数。
+        x_min: 可接受的最小浮点数。
+        x_max: 可接受的最大浮点数。
+        bits: 输入无符号整数的位数。
+
+        返回:
+        转换后的浮点数。
+        """
         span = (1 << bits) - 1
         offset = x_max - x_min
         x = max(min(x, span), 0)  # Clamp x to the range [0, span]
         return offset * x / span + x_min
 
-    # 定义线性映射函数
     def _linear_mapping(
         self, value, value_min, value_max, target_min=0, target_max=65535
     ):
+        """
+        对输入值进行线性映射。
+
+        参数:
+        value: 输入值。
+        value_min: 输入值的最小界限。
+        value_max: 输入值的最大界限。
+        target_min: 输出值的最小界限。
+        target_max: 输出值的最大界限。
+
+        返回:
+        映射后的值。
+        """
         return int(
             (value - value_min) / (value_max -
                                    value_min) * (target_max - target_min)
@@ -89,6 +133,17 @@ class CANMotorController:
         )
 
     def format_data(self, data=[], format="f f", type="decode"):
+        """
+        对数据进行编码或解码。
+
+        参数:
+        data: 输入的数据列表。
+        format: 数据的格式。
+        type: "encode" 或 "decode", 表示是进行编码还是解码。
+
+        返回:
+        编码或解码后的数据。
+        """
         format_list = format.split()
         rdata = []
         if type == "decode":
@@ -151,8 +206,19 @@ class CANMotorController:
                     rdata.append(0x00)
             return rdata
 
-    # 定义打包data1函数
     def pack_to_8bytes(self, target_angle, target_velocity, Kp, Kd):
+        """
+        定义打包data1函数, 将控制参数打包为8字节的数据。
+
+        参数:
+        target_angle: 目标角度。
+        target_velocity: 目标速度。
+        Kp: 比例增益。
+        Kd: 微分增益。
+
+        返回:
+        8字节的数据。
+        """
         # 对输入变量进行线性映射
         target_angle_mapped = self._linear_mapping(
             target_angle, self.P_MIN, self.P_MAX)
@@ -163,7 +229,7 @@ class CANMotorController:
         Kd_mapped = self._linear_mapping(Kd, self.KD_MIN, self.KD_MAX)
 
         # 使用Python的struct库进行打包
-        # 使用H表示无符号短整数（2字节），共需要8字节
+        # 使用H表示无符号短整数(2字节), 共需要8字节
         data1_bytes = struct.pack(
             "HHHH", target_angle_mapped, target_velocity_mapped, Kp_mapped, Kd_mapped
         )
@@ -172,16 +238,16 @@ class CANMotorController:
 
     def send_receive_can_message(self, cmd_mode, data2, data1, timeout=200):
         """
-        Send a CAN message and receive a response.
+        发送CAN消息并接收响应。
 
-        Parameters:
-        - cmd_mode: Command mode (bit28~bit24)
-        - data2: Data area 2 (bit23~bit8)
-        - data1: Data bytes to send
-        - timeout: Timeout for sending the message (default is 200ms)
+        参数:
+        cmd_mode: 命令模式。
+        data2: 数据区2。
+        data1: 要发送的数据字节。
+        timeout: 发送消息的超时时间(默认为200ms)。
 
-        Returns:
-        A tuple containing the received message data and the received message arbitration ID, if any.
+        返回:
+        一个元组, 包含接收到的消息数据和接收到的消息仲裁ID(如果有)。
         """
         # Calculate the arbitration ID
         arbitration_id = (cmd_mode << 24) | (data2 << 8) | self.MOTOR_ID
@@ -209,6 +275,16 @@ class CANMotorController:
             return None, None
 
     def parse_received_msg(self, data, arbitration_id):
+        """
+        解析接收到的CAN消息。
+
+        参数:
+        data: 接收到的数据。
+        arbitration_id: 接收到的消息的仲裁ID。
+
+        返回:
+        一个元组, 包含电机的CAN ID、位置(rad)和速度(rad/s)。
+        """
         if data is not None:
             logging.debug(f"Received message with ID {hex(arbitration_id)}")
             # 解析电机CAN ID
@@ -231,10 +307,10 @@ class CANMotorController:
 
     def clear_can_rx(self, timeout=10):
         """
-        Clear the receiver buffer by reading all existing messages.
+        清除接收缓冲区中的所有现有消息。
 
-        Parameters:
-        - timeout: Time in ms to wait for the clearing operation.
+        参数:
+        timeout: 等待清除操作的时间（单位：毫秒）。
         """
         timeout_seconds = timeout / 1000.0  # Convert to seconds
         while True:
@@ -245,11 +321,22 @@ class CANMotorController:
                 f"Cleared message with ID {hex(received_msg.arbitration_id)}")
 
     def _write_single_param(self, index, value, format="u32"):
+        """
+        写入单个参数。
+
+        参数:
+        index: 参数索引。
+        value: 要设置的值。
+        format: 数据格式。
+
+        返回:
+        解析后的接收消息。
+        """
         encoded_data = self.format_data(
             data=[value], format=format, type="encode")
         data1 = [b for b in struct.pack("<I", index)] + encoded_data
 
-        self.clear_can_rx()  # 空CAN接收缓存，避免读到老数据
+        self.clear_can_rx()  # 空CAN接收缓存, 避免读到老数据
 
         received_msg_data, received_msg_arbitration_id = self.send_receive_can_message(
             cmd_mode=self.CmdModes.SINGLE_PARAM_WRITE,
@@ -259,6 +346,16 @@ class CANMotorController:
         return self.parse_received_msg(received_msg_data, received_msg_arbitration_id)
 
     def write_single_param(self, param_name, value):
+        """
+        通过参数名称写入单个参数。
+
+        参数:
+        param_name: 参数名称。
+        value: 要设置的值。
+
+        返回:
+        写入操作的结果。
+        """
         param_info = self.PARAMETERS.get(param_name)
         if param_info is None:
             logging.info(f"Unknown parameter name: {param_name}")
@@ -270,6 +367,16 @@ class CANMotorController:
         return self._write_single_param(index=index, value=value, format=format)
 
     def write_param_table(self, param_name, value):
+        """
+        写入参数表。
+
+        参数:
+        param_name: 参数名称。
+        value: 要设置的值。
+
+        返回:
+        接收到的消息数据和仲裁ID。
+        """
         # Get the parameter info from PARAM_TABLE
         param_info = self.PARAM_TABLE.get(param_name)
         if param_info is None:
@@ -321,7 +428,13 @@ class CANMotorController:
         return received_msg_data, received_msg_arbitration_id
 
     def set_0_pos(self):
-        self.clear_can_rx()  # 清空CAN接收缓存，避免读到老数据
+        """
+        设置电机的机械零点。
+
+        返回:
+        解析后的接收消息。
+        """
+        self.clear_can_rx()  # 清空CAN接收缓存, 避免读到老数据
 
         received_msg_data, received_msg_arbitration_id = self.send_receive_can_message(
             cmd_mode=self.CmdModes.SET_MECHANICAL_ZERO,
@@ -332,7 +445,13 @@ class CANMotorController:
         return self.parse_received_msg(received_msg_data, received_msg_arbitration_id)
 
     def enable(self):
-        self.clear_can_rx(0)  # 清空CAN接收缓存，避免读到老数据
+        """
+        使能运行电机。
+
+        返回:
+        解析后的接收消息。
+        """
+        self.clear_can_rx(0)  # 清空CAN接收缓存, 避免读到老数据
 
         received_msg_data, received_msg_arbitration_id = self.send_receive_can_message(
             cmd_mode=self.CmdModes.MOTOR_ENABLE, data2=self.MAIN_CAN_ID, data1=[]
@@ -340,7 +459,13 @@ class CANMotorController:
         return self.parse_received_msg(received_msg_data, received_msg_arbitration_id)
 
     def disable(self):
-        self.clear_can_rx(0)  # 空CAN接收缓存，避免读到老数据
+        """
+        停止运行电机。
+
+        返回:
+        解析后的接收消息。
+        """
+        self.clear_can_rx(0)  # 空CAN接收缓存, 避免读到老数据
 
         received_msg_data, received_msg_arbitration_id = self.send_receive_can_message(
             cmd_mode=self.CmdModes.MOTOR_STOP,
@@ -350,12 +475,31 @@ class CANMotorController:
         return self.parse_received_msg(received_msg_data, received_msg_arbitration_id)
 
     def set_run_mode(self, mode):
+        """
+        设置运行模式。
+
+        参数:
+        mode: 运行模式，应为 RunModes 枚举的一个实例。
+
+        返回:
+        写入操作的结果。
+        """
         if not isinstance(mode, self.RunModes):
             raise ValueError(
                 f"Invalid mode: {mode}. Must be an instance of RunModes enum.")
         return self.write_single_param("run_mode", value=mode.value)
 
     def set_motor_position_control(self, limit_spd, loc_ref):
+        """
+        设置电机的位置控制参数。
+
+        参数:
+        limit_spd: 电机的最大速度。
+        loc_ref: 电机的目标位置。
+
+        返回:
+        None。
+        """
         # 设置电机最大速度
         self.write_single_param(param_name="limit_spd", value=limit_spd)
         # 设置电机目标位置
@@ -364,6 +508,20 @@ class CANMotorController:
     def send_motor_control_command(
         self, torque, target_angle, target_velocity, Kp, Kd
     ):
+        """
+        发送运控模式电机控制指令。
+
+        参数:
+        torque: 扭矩。
+        target_angle: 目标角度。
+        target_velocity: 目标速度。
+        Kp: 比例增益。
+        Kd: 导数增益。
+
+        返回:
+        解析后的接收消息。
+        """
+
         # 生成29位的仲裁ID的组成部分
         cmd_mode = self.CmdModes.MOTOR_CONTROL
         torque_mapped = self._linear_mapping(
