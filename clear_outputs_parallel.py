@@ -1,7 +1,17 @@
 import os
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
+import re
+import nbformat
 
+def clean_execute_time(file_path):
+    nb = nbformat.read(file_path, as_version=4)
+    for cell in nb.cells:
+        if "metadata" in cell:
+            cell["metadata"] = {}
+            
+    nbformat.write(nb, file_path)
+            
 def clear_ipynb_output(file_path):
     cmd = [
         "jupyter",
@@ -21,6 +31,7 @@ for root, _, files in os.walk("."):
         if file.endswith(".ipynb"):
             full_path = os.path.join(root, file)
             ipynb_files.append(full_path)
+            clean_execute_time(full_path)
 
 # 并行清除输出
 with ThreadPoolExecutor() as executor:
