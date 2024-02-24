@@ -1,0 +1,6 @@
+[submodule "torque_sensor_osc"]
+	path = torque_sensor_osc
+	url = https://github.com/Tony607/torque_sensor_osc
+[submodule "stepper_gripper"]
+	path = stepper_gripper
+	url = https://github.com/Tony607/stepper_gripper
