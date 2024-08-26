@@ -2,3 +2,4 @@ Flask
 Flask-SocketIO
 pyserial
 uptime
+python-can
