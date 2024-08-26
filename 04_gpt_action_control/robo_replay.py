@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 class RoboReplay:
     def __init__(self) -> None:
         # Connect to the CAN bus with 1 Mbit/s bitrate
-        self.bus = can.interface.Bus(bustype="pcan", channel="PCAN_USBBUS1", bitrate=1000000)
+        self.bus = can.interface.Bus(interface="pcan", channel="PCAN_USBBUS1", bitrate=1000000)
         self.motor1 = CANMotorController(self.bus, motor_id=101, main_can_id=254)
         self.motor2 = CANMotorController(self.bus, motor_id=102, main_can_id=254)
         self.motor3 = CANMotorController(self.bus, motor_id=103, main_can_id=254)

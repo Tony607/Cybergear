@@ -28,7 +28,7 @@ last_whistle_time = datetime.now()
 # Time to wait after last whistle to disable motor (in seconds)
 SILENT_THRESHOLD = timedelta(seconds=0.5)
 
-bus = can.interface.Bus(bustype="pcan", channel="PCAN_USBBUS1", bitrate=1000000)
+bus = can.interface.Bus(interface="pcan", channel="PCAN_USBBUS1", bitrate=1000000)
 motor = CANMotorController(bus, motor_id=127, main_can_id=254)
 
 # 速度模式
