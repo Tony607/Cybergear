@@ -285,7 +285,7 @@ class CANMotorController:
         arbitration_id: 接收到的消息的仲裁ID。
 
         返回:
-        一个元组, 包含电机的CAN ID、位置(rad)、速度(rad/s)、力矩(Nm)。
+        一个元组, 包含电机的CAN ID、位置(rad)、速度(rad/s)、力矩(Nm)、温度(摄氏度)。
         """
         if data is not None:
             logging.debug(f"Received message with ID {hex(arbitration_id)}")
@@ -293,23 +293,27 @@ class CANMotorController:
             motor_can_id = (arbitration_id >> 8) & 0xFF
 
             pos = self._uint_to_float(
-                (data[0] << 8) +
-                data[1], self.P_MIN, self.P_MAX, self.TWO_BYTES_BITS
+                (data[0] << 8) + data[1], self.P_MIN, self.P_MAX, self.TWO_BYTES_BITS
             )
             vel = self._uint_to_float(
-                (data[2] << 8) +
-                data[3], self.V_MIN, self.V_MAX, self.TWO_BYTES_BITS
+                (data[2] << 8) + data[3], self.V_MIN, self.V_MAX, self.TWO_BYTES_BITS
             )
             torque = self._uint_to_float(
-                (data[4] << 8) +
-                data[5], self.T_MIN, self.T_MAX, self.TWO_BYTES_BITS
+                (data[4] << 8) + data[5], self.T_MIN, self.T_MAX, self.TWO_BYTES_BITS
             )
+            # 解析温度数据
+            temperature_raw = (data[6] << 8) + data[7]
+            temperature_celsius = temperature_raw / 10.0
+            
             logging.info(
-                f"Motor CAN ID: {motor_can_id}, pos: {pos:.2f} rad, vel: {vel:.2f} rad/s, torque: {torque:.2f} Nm")
-            return motor_can_id, pos, vel, torque
+                f"Motor CAN ID: {motor_can_id}, pos: {pos:.2f} rad, vel: {vel:.2f} rad/s, "
+                f"torque: {torque:.2f} Nm, temperature: {temperature_celsius:.1f} °C"
+            )
+            
+            return motor_can_id, pos, vel, torque, temperature_celsius
         else:
             logging.info("No message received within the timeout period.")
-            return None, None, None, None
+            return None, None, None, None, None
 
     def clear_can_rx(self, timeout=10):
         """
